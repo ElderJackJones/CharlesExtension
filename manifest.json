@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "Charles Undercover",
+  "version": "1.0",
+  "description": "Fetches authentication token from Church referral manager for mission app",
+  "permissions": ["activeTab"],
+  "host_permissions": ["https://referralmanager.churchofjesuschrist.org/*"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Get Church Auth Token"
+  }
+}
