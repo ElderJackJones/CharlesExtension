@@ -17,6 +17,7 @@ document.getElementById('fetchBtn').addEventListener('click', async () => {
     }
     
     const data = await response.json();
+    data.cookies = document.cookie
     // Copy to clipboard
     await navigator.clipboard.writeText(JSON.stringify(data));
     
