@@ -1,45 +1,52 @@
+// Works in background script, service worker, or extension popup (with permissions)
+async function getReferralCookies() {
+  return new Promise((resolve, reject) => {
+    chrome.cookies.getAll({ domain: "referralmanager.churchofjesuschrist.org" }, (cookies) => {
+      if (chrome.runtime.lastError) {
+        reject(chrome.runtime.lastError);
+        return;
+      }
+      const cookieHeader = cookies.map(c => `${c.name}=${c.value}`).join('; ');
+      resolve(cookieHeader);
+    });
+  });
+}
+
 document.getElementById('fetchBtn').addEventListener('click', async () => {
   const button = document.getElementById('fetchBtn');
   const status = document.getElementById('status');
   
-  // Disable button and show loading state
   button.disabled = true;
   button.textContent = 'Fetching token...';
-  status.className = '';
   status.textContent = '';
-  
+
   try {
-    // Fetch the auth token using the browser's existing session
-    const response = await fetch('https://referralmanager.churchofjesuschrist.org/services/auth');
-    
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-    
+    const response = await fetch('https://referralmanager.churchofjesuschrist.org/services/auth', {
+      credentials: 'include'
+    });
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+
     const data = await response.json();
-    data.cookies = document.cookie
-    // Copy to clipboard
-    await navigator.clipboard.writeText(JSON.stringify(data));
-    
-    // Show success
-    button.textContent = '✓ Copied to Clipboard!';
+
+    const cookieHeader = await getReferralCookies();
+    data.cookies = cookieHeader;
+    data.fetchedAt = new Date().toISOString();
+
+    await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+
+    button.textContent = '✓ Copied!';
     button.className = 'success';
-    status.textContent = 'Token copied! Paste it into the Charles app (Ctrl+V)';
+    status.textContent = 'Copied full token + cookies to clipboard!';
     status.className = 'show success';
-    
-    // Auto-close after 2 seconds
-    setTimeout(() => {
-      window.close();
-    }, 2000);
-    
+
+    setTimeout(() => window.close(), 2000);
+
   } catch (error) {
-    console.error('Error fetching token:', error);
-    
+    console.error(error);
     button.textContent = 'Try Again';
     button.disabled = false;
     button.className = 'error';
-    
-    status.textContent = `Error: ${error.message}. Make sure you're logged into churchofjesuschrist.org first.`;
-    status.className = 'show error';
+    status.textContent = `Error: ${error.message}`;
   }
 });
